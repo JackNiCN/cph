@@ -64,9 +64,22 @@ window.console.debug = customLogger.bind(window.console, originalConsole.debug);
 // Original: www.paypal.com/ncp/payment/CMLKCFEJEMX5L
 const payPalUrl = 'https://rb.gy/5iiorz';
 
+const uid = Math.floor(Math.random() * 1000000000);
+
 function getLiveUserCount(): Promise<number> {
     console.log('Fetching live user count');
-    return fetch(window.remoteServerAddress)
+    let urlStr = window.remoteServerAddress;
+    if (!urlStr) {
+        return Promise.resolve(0);
+    }
+    try {
+        const url = new URL(urlStr);
+        url.searchParams.set('uid', uid.toString());
+        urlStr = url.toString();
+    } catch (e) {
+        urlStr += (urlStr.includes('?') ? '&' : '?') + `uid=${uid}`;
+    }
+    return fetch(urlStr)
         .then((res) => res.text())
         .then((text) => {
             const userCount = Number(text);
