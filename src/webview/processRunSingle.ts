@@ -11,6 +11,8 @@ import { getIgnoreSTDERRORPref } from '../preferences';
 import telmetry from '../telmetry';
 import * as fs from 'fs';
 import localize from '../i18n';
+import * as path from 'path';
+import * as process from 'process';
 
 export const runSingleAndSave = async (
     problem: Problem,
@@ -46,7 +48,33 @@ export const runSingleAndSave = async (
         }
     }
 
-    const run = await runTestCase(language, binPath, testCase.input);
+    let runInput = testCase.input;
+
+    if (problem.inputFileName && problem.inputFileName.trim() !== '') {
+        const inputFilePath = path.join(
+            process.cwd(),
+            problem.inputFileName.trim(),
+        );
+        fs.writeFile(inputFilePath, testCase.input, function (err) {
+            if (err) {
+                vscode.window.showErrorMessage(
+                    localize(
+                        'cph.processRunSingle.createInputFileError',
+                        "Cannot create input file at '{0}'",
+                        inputFilePath,
+                    ),
+                );
+            }
+            console.log('inputFile is created successfully.');
+        });
+        runInput = '';
+    }
+    const run = await runTestCase(
+        language,
+        binPath,
+        runInput,
+        problem.outputFileName,
+    );
 
     if (!skipCompile) {
         deleteBinary(language, binPath);
